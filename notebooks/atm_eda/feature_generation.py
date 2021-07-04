@@ -1,6 +1,21 @@
 import numpy as np
 import pandas as pd
 
+# input:    dataframe with columns: ['CashIn', 'CashOut']
+# do:       remove outliers and interpolate. inplace=True by default. Maybe add an option
+def clean_data(df, freq='D', drop_zeros=True):    
+    df.index = pd.to_datetime(df.index) # switch to datetimeIndex
+
+    # clean outliers
+    # This may not be the best course of action when we are looking at a single ATM
+    if drop_zeros:
+        df[df['CashIn'] == 0] = np.NaN
+
+    df = df.resample('D').asfreq()  # upsample
+    df = df.interpolate()           # interpolate (Maybe add better methods later)
+
+    return df
+
 # Craete windows from a series
 def get_windows(series, size, prefix = "", drop_t = False):
     frame = pd.DataFrame(series.copy())
