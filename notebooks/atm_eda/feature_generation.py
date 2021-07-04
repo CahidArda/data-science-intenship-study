@@ -71,12 +71,25 @@ def get_average_of_last(series, sizes, prefix="average"):
 from datetime import timedelta
 
 # get distance to the closest work day
-def get_distance_to_work_days(datetimeIndex, days):
+def get_distance_to_work_days(datetimeIndex):
     # See 1st and 15th of the current month, 1st of the second month
-    get_name = lambda day: 'curr_month_' + day
     set_day = lambda day: lambda date: date.replace(day=day)
-    curr_month_1 = datetimeIndex.to_series(index=datetimeIndex, name=get_name(days[0])).apply(set_day(1))
+    curr_month_1 = datetimeIndex.to_series(index=datetimeIndex, name='curr_month_1').apply(set_day(1))
     curr_month_15 = curr_month_1.apply(set_day(15))
     curr_month_15.name = 'curr_month_15'
-    
-    next_month_1 = curr_month_1 + timedelta(months=1)
+    next_month_1 = curr_month_1 + pd.offsets.MonthBegin(1)
+    next_month_1.name = 'next_month_1'
+
+    results = []
+    pairs = [
+        ('curr_month_1_delta',  curr_month_1),
+        ('curr_month_15_delta', curr_month_15),
+        ('next_month_1_delta',  next_month_1)
+    ]
+    for name, dates in pairs:
+        delta = dates - datetimeIndex
+        delta = delta.apply(lambda x: x.days)
+        delta.name = name
+        results.append(delta)
+
+    return results
