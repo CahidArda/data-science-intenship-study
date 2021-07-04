@@ -1,0 +1,67 @@
+import numpy as np
+import pandas as pd
+
+# Craete windows from a series
+def get_windows(series, size, prefix = "", drop_t = False):
+    frame = pd.DataFrame(series.copy())
+    frame.columns = ['t']
+
+    for shift_by in range(1, size+1):
+        frame[("" if (prefix=="") else prefix+"_") + "t-" + str(shift_by)] = frame['t'].shift(shift_by)
+
+    frame.dropna(inplace = True)
+
+    if drop_t:
+        frame.drop(columns=['t'], inplace=True)
+
+    return frame
+
+# get a series representing the index of dates
+def get_day_indexes(datetimeIndex, name="Day_Index"):
+    first_date = datetimeIndex[0]
+    first_date_index = int(first_date.strftime('%w'))
+    sequence = np.roll(np.arange(7), 1-first_date_index)
+
+    l = len(datetimeIndex)
+    weekdays = pd.concat([pd.Series(sequence)] * (int(l/7)+1))[:l]
+    weekdays.name = name
+    weekdays.index = datetimeIndex
+
+    return weekdays
+
+# using indexes of dates, return two series representing a one-hot feature: is_weekday/is_weekend
+def get_is_weekday_weekend(day_index_series):
+    is_weekday = day_index_series.copy()
+    is_weekday[is_weekday < 5] = 1
+    is_weekday[is_weekday > 4] = 0
+    is_weekday.name = "Is_Weekday"
+    is_weekend = 1 - is_weekday
+    is_weekend.name = "Is_Weekend"
+
+    return is_weekday, is_weekend
+
+# get average of last n days from a series
+def get_average_of_last(series, sizes, prefix="average"):
+    sizes.sort()
+    windows = get_windows(series, sizes[-1], drop_t = True)
+
+    results = []
+    for size in sizes:
+        averages = windows[windows.columns[:size]].mean(axis=1)
+        averages.name = prefix + '_' + str(size)
+        results.append(averages)
+    
+    return results
+
+from datetime import timedelta
+
+# get distance to the closest work day
+def get_distance_to_work_days(datetimeIndex, days):
+    # See 1st and 15th of the current month, 1st of the second month
+    get_name = lambda day: 'curr_month_' + day
+    set_day = lambda day: lambda date: date.replace(day=day)
+    curr_month_1 = datetimeIndex.to_series(index=datetimeIndex, name=get_name(days[0])).apply(set_day(1))
+    curr_month_15 = curr_month_1.apply(set_day(15))
+    curr_month_15.name = 'curr_month_15'
+    
+    next_month_1 = curr_month_1 + timedelta(months=1)
