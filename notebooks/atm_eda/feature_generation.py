@@ -93,3 +93,8 @@ def get_distance_to_work_days(datetimeIndex):
         results.append(delta)
 
     return results
+
+def get_trend(series, period):
+    trend = 2 * series.shift(period) - series.shift(2*period)
+    trend.name = series.name + "_trend_" + str(period)
+    return trend
