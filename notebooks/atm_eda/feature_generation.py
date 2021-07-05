@@ -99,7 +99,7 @@ def get_trend(series, period):
     trend.name = series.name + "_trend_" + str(period)
     return trend
 
-# input:    dataframe['CashIn', 'CashOut'], date
+# input:    dataframe with columns: ['CashIn', 'CashOut'], target variables
 # do:       generate a feature set for the given date
 # return:   return the feature set
 def get_feature_sets(df, targets):
