@@ -98,3 +98,41 @@ def get_trend(series, period):
     trend = 2 * series.shift(period) - series.shift(2*period)
     trend.name = series.name + "_trend_" + str(period)
     return trend
+
+# input:    dataframe['CashIn', 'CashOut'], date
+# do:       generate a feature set for the given date
+# return:   return the feature set
+def get_feature_sets(df, targets):
+    will_merge = [df]
+
+    weekdays = get_day_indexes(df.index)
+    will_merge.append(weekdays)
+
+    week_days_one_hot = pd.get_dummies(weekdays, prefix = "Day")    
+    will_merge.append(week_days_one_hot)
+
+    # Weekday/weekend (one-hot)
+    is_weekday, is_weekend = get_is_weekday_weekend(weekdays)
+    will_merge.append(is_weekday)
+    will_merge.append(is_weekend)
+
+    # CashIn/CashOut averages of the last week/month
+    sizes = [7, 30]
+    for target in targets:
+        will_merge.extend(get_average_of_last(df[target], sizes, target + "_average"))
+
+    will_merge.extend(get_distance_to_work_days(df.index))
+
+    for target in targets:
+        will_merge.append(get_trend(df[target], 7))
+
+    # Last 14 days of CashIn and CashOut
+    # These windows are actually created twice at the moment. One here and one inside get_average_of_last function
+    # We can update to calculate windows only once later.
+    for target in targets:
+        will_merge.append(get_windows(df[target], 14, target, drop_t=True))
+
+    result = pd.concat(will_merge, axis=1)
+    result.dropna(inplace=True)
+    
+    return result
