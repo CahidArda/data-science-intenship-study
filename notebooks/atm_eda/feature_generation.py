@@ -70,8 +70,8 @@ def get_average_of_last(series, sizes, prefix="average"):
 
 from datetime import timedelta
 
-# get distance to the closest work day
-def get_distance_to_work_days(datetimeIndex):
+# get distance to the closest pay day
+def get_distance_to_pay_days(datetimeIndex):
     # See 1st and 15th of the current month, 1st of the second month
     set_day = lambda day: lambda date: date.replace(day=day)
     curr_month_1 = datetimeIndex.to_series(index=datetimeIndex, name='curr_month_1').apply(set_day(1))
@@ -103,12 +103,22 @@ def get_trend(series, period):
 # Special Days
 #------------------------------------------
 
+# inputs:
+#   - datetimeIndex: datetimeIndex of the original feature set
+#   - dates: dates to start the range from
+#   - n: size of range
+#   - name: name of the series
 def get_is_dates(datetimeIndex, dates, n, name):
     is_date = pd.Series(False, index = datetimeIndex, name = "is_%s"%name)
     for arefe in dates:
         is_date[pd.date_range(start=arefe, periods=n)] = True
     return is_date
 
+# inputs:
+#   - datetimeIndex: datetimeIndex of the original feature set
+#   - dates: dates to end the range at
+#   - n: size of range
+#   - name: name of the series
 def get_dates_in_n_days(datetimeIndex, dates, n, name):
     in_n_days = pd.Series(False, index = datetimeIndex, name = "%s_in_%d_days"%(name, n))
     for arefe in dates:
@@ -160,7 +170,7 @@ def get_feature_sets(df, targets):
     for target in targets:
         will_merge.extend(get_average_of_last(df[target], sizes, target + "_average"))
 
-    will_merge.extend(get_distance_to_work_days(df.index))
+    will_merge.extend(get_distance_to_pay_days(df.index))
 
     for target in targets:
         will_merge.append(get_trend(df[target], 7))
