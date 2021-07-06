@@ -16,6 +16,18 @@ def clean_data(df, freq='D', drop_zeros=True):
 
     return df
 
+# input:    all the atm data, an atm ID
+# do:       get the data of the given atm and clean it
+# return:   dataframe with ['CashIn', 'CashOut'] as columns for the given ATM ID
+def get_atm(df, atm_id):
+    
+    atm_df = df[df['AtmId'] == atm_id].copy()
+    atm_df.drop(columns = 'AtmId', inplace = True)
+    atm_df.set_index('HistoryDate', inplace = True)
+    atm_df.index = pd.to_datetime(atm_df.index)
+    
+    return atm_df
+
 # Craete windows from a series
 def get_windows(series, size, prefix = "", drop_t = False):
     frame = pd.DataFrame(series.copy())
