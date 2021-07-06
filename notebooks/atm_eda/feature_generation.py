@@ -99,6 +99,45 @@ def get_trend(series, period):
     trend.name = series.name + "_trend_" + str(period)
     return trend
 
+# ------------------------------------------
+# Special Days
+#------------------------------------------
+
+def get_is_dates(datetimeIndex, dates, n, name):
+    is_date = pd.Series(False, index = datetimeIndex, name = "is_%s"%name)
+    for arefe in dates:
+        is_date[pd.date_range(start=arefe, periods=n)] = True
+    return is_date
+
+def get_dates_in_n_days(datetimeIndex, dates, n, name):
+    in_n_days = pd.Series(False, index = datetimeIndex, name = "%s_in_%d_days"%(name, n))
+    for arefe in dates:
+        in_n_days[pd.date_range(end=arefe, periods=n)] = True
+    return in_n_days
+
+RAMAZAN_AREFES = [
+        '2016-7-4',
+        '2017-6-24',
+        '2018-6-14',
+        '2019-6-4'
+    ]
+
+KURBAN_AREFES = [
+        '2016-9-11',
+        '2017-8-31',
+        '2018-8-20',
+        '2019-8-10'
+    ]
+
+get_is_ramazan        = lambda datetimeIndex: get_is_dates(datetimeIndex, RAMAZAN_AREFES, 4, 'ramazan')
+get_ramazan_in_7_days = lambda datetimeIndex: get_dates_in_n_days(datetimeIndex, RAMAZAN_AREFES, 7, 'ramazan')
+get_is_kurban         = lambda datetimeIndex: get_is_dates(datetimeIndex, KURBAN_AREFES, 5, 'kurban')
+get_kurban_in_7_days  = lambda datetimeIndex: get_dates_in_n_days(datetimeIndex, KURBAN_AREFES, 7, 'kurban')
+
+# ------------------------------------------
+# Generate feature function
+# ------------------------------------------
+
 # input:    dataframe with columns: ['CashIn', 'CashOut'], target variables
 # do:       generate a feature set for the given date
 # return:   return the feature set
@@ -125,6 +164,9 @@ def get_feature_sets(df, targets):
 
     for target in targets:
         will_merge.append(get_trend(df[target], 7))
+
+    for f in [get_is_ramazan, get_ramazan_in_7_days, get_is_kurban, get_kurban_in_7_days]:
+        will_merge.append(f(df.index))
 
     # Last 14 days of CashIn and CashOut
     # These windows are actually created twice at the moment. One here and one inside get_average_of_last function
