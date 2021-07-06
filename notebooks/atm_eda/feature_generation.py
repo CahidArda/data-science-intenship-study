@@ -193,8 +193,8 @@ def get_feature_sets(df, targets):
     # Last 14 days of CashIn and CashOut
     # These windows are actually created twice at the moment. One here and one inside get_average_of_last function
     # We can update to calculate windows only once later.
-    for target in targets:
-        will_merge.append(get_windows(df[target], 14, target, drop_t=True))
+    will_merge.append(get_windows(df['CashIn'], 14, 'CashIn', drop_t=True))
+    will_merge.append(get_windows(df['CashOut'], 40, 'CashOut', drop_t=True))
 
     result = pd.concat(will_merge, axis=1)
     result.dropna(inplace=True)
