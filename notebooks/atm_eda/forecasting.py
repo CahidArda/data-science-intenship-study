@@ -10,6 +10,8 @@ def mape_error(y_actual, y_pred, mean=True):
     else:
         return result
 
+from feature_generation import get_windows
+
 # input:            pandas dataframe representing the target variables, size of the window (must be higher than the highest value in averages parameter)
 # input example:    average=[[7,14], [7,14,21]] calculate the averages of t-7 and t-14, then find MAPE with this average. Same for t-7, t-14 and t-21
 # do:               Calculate errors by shifting and averaging. These errors are then used as base errors
@@ -36,7 +38,7 @@ def get_error_with_freq(y_actual, y_pred, error_freq='w'):
     return errors
 
 # ------------------------------------------
-# 
+# Parameter tuning
 # ------------------------------------------
 
 from sklearn.model_selection import train_test_split
@@ -55,17 +57,17 @@ def compare_model_parameter(algorithm, X, y, parameter, values, shuffle=True):
 
     train_error = []
     test_error = []
-    best = [0, 100]
+    best = [0, None]
     values.sort()
     for value in values:
         d = {parameter: value}
         model = algorithm(**d, random_state=5)
         model.fit(X_train, y_train)
 
-        train_error.append(mape_error(model.predict(X_train), y_train))
-        test_error.append(mape_error(model.predict(X_test), y_test))
+        train_error.append(mape_error(y_train, model.predict(X_train)))
+        test_error.append(mape_error(y_test, model.predict(X_test)))
 
-        if test_error[-1] < best[1]:
+        if best[1] == None or test_error[-1] < best[1]:
             best = [value, test_error[-1]]
 
 
