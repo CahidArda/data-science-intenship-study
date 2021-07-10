@@ -1,5 +1,3 @@
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import pandas as pd
 
 # input:    two pandas series representing the actual series and the predicted series
@@ -77,34 +75,3 @@ def compare_model_parameter(algorithm, X, y, parameter, values, shuffle=True):
     plt.show()
 
     print("Best test error: %.3f with %d trees."%(best[1], best[0]))
-
-# ------------------------------------------
-# Plotting error, predictions and actuals
-# ------------------------------------------
-
-# input:    Trained model, data used to train the model, actual values
-# do:       Using the model and data, draw actual/predicted and the error over time
-def draw_model_error(model, X, y_actual, error_freq='w', split_from=None):
-
-    y_pred = pd.Series(model.predict(X), index=X.index)
-    weekly_errors = get_error_with_freq(y_actual, y_pred, error_freq)
-    draw_error_over_time(y_actual, y_pred, weekly_errors, split_from)
-
-def draw_error_over_time(y_actual, y_pred, weekly_errors, split_from=None):
-    # Create figure with secondary y-axis
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-
-    fig.add_trace(go.Scatter(x=y_actual.index, y=y_actual, name='%s Actual'%y_actual.name, line=dict(color='rgba(255,0,0,0.6)')), secondary_y=False)
-    fig.add_trace(go.Scatter(x=y_actual.index, y=y_pred, name = '%s Predicted'%y_actual.name, line=dict(color='rgba(30,30,200,0.5)')), secondary_y=False)
-
-    fig.add_trace(go.Scatter(x=weekly_errors.index, y=weekly_errors, name="Error", line=dict(color='rgba(34, 155, 0, 0.4)', width=4)), secondary_y=True)
-
-    # set layout title
-    fig.update_layout(title='%s Prediction and Actual Comparison'%y_actual.name + (" (train-test split from %s)"%split_from.strftime('%d.%m.%Y') if split_from else ""))
-    # set x axis titles
-    fig.update_xaxes(title_text="Date")
-    # set y axis titles
-    fig.update_yaxes(title_text="Amount", secondary_y=False)
-    fig.update_yaxes(title_text="<b>MAPE</b> Error", secondary_y=True)
-
-    fig.show()

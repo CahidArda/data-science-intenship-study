@@ -200,28 +200,3 @@ def get_feature_sets(df, targets):
     result.dropna(inplace=True)
     
     return result
-
-# ------------------------------------------
-# Visualising the feature set
-# ------------------------------------------
-
-import matplotlib.pyplot as plt
-
-def correlation(feature_set, correlation_with=None):
-    if correlation_with != None:
-        drop_column = "CashIn" if correlation_with == "CashOut" else "CashOut"
-        feature_set = feature_set[feature_set.drop(columns=drop_column).columns]
-        title = "Correlation with " + correlation_with
-    else:
-        title = "Correlation matrix"
-    corrs = feature_set.corr()
-
-    plt.figure(figsize=(10,10))
-    plt.gca().invert_yaxis()
-
-    # https://matplotlib.org/stable/tutorials/colors/colormaps.html
-    plt.pcolor(corrs, cmap = "Greens")
-    plt.yticks(np.arange(0.5, len(corrs.index), 1), corrs.index)
-    plt.xticks(np.arange(0.5, len(corrs.columns), 1), corrs.columns, rotation = 'vertical')
-    plt.title(title)
-    plt.show()
