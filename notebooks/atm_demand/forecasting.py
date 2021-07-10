@@ -1,8 +1,9 @@
 import pandas as pd
+import numpy as np
 
 # input:    two pandas series representing the actual series and the predicted series
 def mape_error(y_actual, y_pred, mean=True):
-    result = 100 * ((y_actual - y_pred).abs() / y_actual)
+    result = 100 * np.abs((y_actual - y_pred) / y_actual)
     if mean:
         return result.mean()
     else:

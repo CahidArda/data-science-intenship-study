@@ -30,6 +30,8 @@ def correlation(feature_set, correlation_with=None):
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import pandas as pd
+from forecasting import get_error_with_freq
 
 # input:    Trained model, data used to train the model, actual values
 # do:       Using the model and data, draw actual/predicted and the error over time
