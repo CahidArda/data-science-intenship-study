@@ -18,4 +18,7 @@ After checking that VS Code can connect with the environment, install tensorflow
 ```
 conda install tensorflow
 conda install matplotlib
+conda install pandas
+conda install -c conda-forge scikit-learn
+conda install -c plotly plotly
 ```
