@@ -1,5 +1,7 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from sklearn.model_selection import train_test_split
 
 # input:    two pandas series representing the actual series and the predicted series
 def mape_error(y_actual, y_pred, mean=True):
@@ -39,9 +41,6 @@ def get_error_with_freq(y_actual, y_pred, error_freq='w'):
 # ------------------------------------------
 # Parameter tuning
 # ------------------------------------------
-
-from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
 
 # input:
 #   - algorithm: ML algortihm to train and test
