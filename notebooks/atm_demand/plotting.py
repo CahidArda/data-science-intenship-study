@@ -37,7 +37,7 @@ from forecasting import get_error_with_freq
 # do:       Using the model and data, draw actual/predicted and the error over time
 def draw_model_error(model, X, y_actual, error_freq='w', split_from=None):
 
-    y_pred = pd.Series(model.predict(X), index=X.index)
+    y_pred = pd.Series(model.predict(X))
     weekly_errors = get_error_with_freq(y_actual, y_pred, error_freq)
     draw_error_over_time(y_actual, y_pred, weekly_errors, split_from)
 

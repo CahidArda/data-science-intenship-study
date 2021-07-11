@@ -5,7 +5,8 @@ from sklearn.model_selection import train_test_split
 
 # input:    two pandas series representing the actual series and the predicted series
 def mape_error(y_actual, y_pred, mean=True):
-    result = 100 * np.abs((y_actual - y_pred) / y_actual)
+    result = 100 * pd.Series(((y_actual - y_pred) / y_actual), index=y_actual.index)
+    result = result.abs()
     if mean:
         return result.mean()
     else:
