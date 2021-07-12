@@ -56,6 +56,11 @@ def get_day_indexes(datetimeIndex, name="Day_Index"):
 
     return weekdays
 
+def get_month_day_indexes(datetimeIndex):
+    month_day_index = datetimeIndex.to_series().apply(lambda x: int(x.strftime('%d')))
+    month_day_index.name = 'Day_Of_the_Month_Index'
+    return month_day_index
+
 # using indexes of dates, return two series representing a one-hot feature: is_weekday/is_weekend
 def get_is_weekday_weekend(day_index_series):
     is_weekday = day_index_series.copy()
@@ -160,41 +165,45 @@ get_kurban_in_7_days  = lambda datetimeIndex: get_dates_in_n_days(datetimeIndex,
 # Generate feature function
 # ------------------------------------------
 
+def get_date_features(datetimeIndex):
+    will_merge = []
+
+    day_indexes = get_day_indexes(datetimeIndex, 'Day_Of_the_Week_Index')
+    will_merge.append(day_indexes)
+    will_merge.append(pd.get_dummies(day_indexes, prefix="Day_Index_"))
+    
+    will_merge.append(get_month_day_indexes(datetimeIndex))
+    will_merge.extend(get_is_weekday_weekend(day_indexes))
+    will_merge.extend(get_distance_to_pay_days(datetimeIndex))
+    
+    for f in [get_is_ramazan, get_ramazan_in_7_days, get_is_kurban, get_kurban_in_7_days]:
+        will_merge.append(f(datetimeIndex))
+
+    result = pd.concat(will_merge, axis=1)
+
+    return result
+
 # input:    dataframe with columns: ['CashIn', 'CashOut'], target variables
 # do:       generate a feature set for the given date
 # return:   return the feature set
 def get_feature_sets(df, targets):
     will_merge = [df]
 
-    weekdays = get_day_indexes(df.index)
-    will_merge.append(weekdays)
-
-    week_days_one_hot = pd.get_dummies(weekdays, prefix = "Day")    
-    will_merge.append(week_days_one_hot)
-
-    # Weekday/weekend (one-hot)
-    is_weekday, is_weekend = get_is_weekday_weekend(weekdays)
-    will_merge.append(is_weekday)
-    will_merge.append(is_weekend)
-
     # CashIn/CashOut averages of the last week/month
     sizes = [7, 30]
     for target in targets:
         will_merge.extend(get_average_of_last(df[target], sizes, target + "_average"))
 
-    will_merge.extend(get_distance_to_pay_days(df.index))
-
     for target in targets:
         will_merge.append(get_trend(df[target], 7))
-
-    for f in [get_is_ramazan, get_ramazan_in_7_days, get_is_kurban, get_kurban_in_7_days]:
-        will_merge.append(f(df.index))
 
     # Last 14 days of CashIn and CashOut
     # These windows are actually created twice at the moment. One here and one inside get_average_of_last function
     # We can update to calculate windows only once later.
     will_merge.append(get_windows(df['CashIn'], 14, 'CashIn', drop_t=True))
     will_merge.append(get_windows(df['CashOut'], 40, 'CashOut', drop_t=True))
+
+    will_merge.append(get_date_features(df.index).astype('int8'))
 
     result = pd.concat(will_merge, axis=1)
     result.dropna(inplace=True)
