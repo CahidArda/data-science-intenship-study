@@ -1,2 +1,4 @@
 # data
 notebooks/*/DATA*.*
+
+__pycache__
