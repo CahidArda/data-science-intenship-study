@@ -43,23 +43,29 @@ def get_windows(series, size, prefix = "", drop_t = False):
 
     return frame
 
+'''
 # get a series representing the index of dates
-def get_day_indexes(datetimeIndex, name="Day_Index"):
+def get_day_of_the_week_index(datetimeIndex, name="Day_Index"):
     first_date = datetimeIndex[0]
     first_date_index = int(first_date.strftime('%w'))
     sequence = np.roll(np.arange(7), 1-first_date_index)
 
     l = len(datetimeIndex)
-    weekdays = pd.concat([pd.Series(sequence)] * (int(l/7)+1))[:l]
-    weekdays.name = name
-    weekdays.index = datetimeIndex
+    day_of_the_week_index = pd.concat([pd.Series(sequence)] * (int(l/7)+1))[:l]
+    day_of_the_week_index.name = name
+    day_of_the_week_index.index = datetimeIndex
 
-    return weekdays
+    return day_of_the_week_index
+'''
 
-def get_month_day_indexes(datetimeIndex):
-    month_day_index = datetimeIndex.to_series().apply(lambda x: int(x.strftime('%d')))
-    month_day_index.name = 'Day_Of_the_Month_Index'
-    return month_day_index
+def format_dates(datetimeIndex, new_format, name):
+    new_index = datetimeIndex.to_series().apply(lambda x: int(x.strftime(new_format)))
+    new_index.name = name
+    return new_index
+
+get_day_of_the_week_index  = lambda datetimeIndex: format_dates(datetimeIndex, '%u', 'Day_of_the_Week_Index') - 1
+get_day_of_the_month_index = lambda datetimeIndex: format_dates(datetimeIndex, '%d', 'Day_of_the_Month_Index') - 1
+get_week_of_the_year_index = lambda datetimeIndex: format_dates(datetimeIndex, '%W', 'Week_of_the_Year_Index')
 
 # using indexes of dates, return two series representing a one-hot feature: is_weekday/is_weekend
 def get_is_weekday_weekend(day_index_series):
@@ -161,6 +167,12 @@ get_ramazan_in_7_days = lambda datetimeIndex: get_dates_in_n_days(datetimeIndex,
 get_is_kurban         = lambda datetimeIndex: get_is_dates(datetimeIndex, KURBAN_AREFES, 5, 'kurban')
 get_kurban_in_7_days  = lambda datetimeIndex: get_dates_in_n_days(datetimeIndex, KURBAN_AREFES, 7, 'kurban')
 
+def get_special_dates_index(df):
+    special_dates = pd.Series(0, index = df.index, name='Special_Dates_Index')
+    for i, feature in enumerate(['is_ramazan', 'ramazan_in_7_days', 'is_kurban','kurban_in_7_days']):
+        special_dates[df[feature] == 1] = i + 1
+    return special_dates
+
 # ------------------------------------------
 # Generate feature function
 # ------------------------------------------
@@ -168,18 +180,21 @@ get_kurban_in_7_days  = lambda datetimeIndex: get_dates_in_n_days(datetimeIndex,
 def get_date_features(datetimeIndex):
     will_merge = []
 
-    day_indexes = get_day_indexes(datetimeIndex, 'Day_Of_the_Week_Index')
-    will_merge.append(day_indexes)
-    will_merge.append(pd.get_dummies(day_indexes, prefix="Day_Index_"))
+    day_of_the_week_index = get_day_of_the_week_index(datetimeIndex)
+    will_merge.append(day_of_the_week_index)
+    will_merge.append(pd.get_dummies(day_of_the_week_index, prefix="Day_Index_"))
     
-    will_merge.append(get_month_day_indexes(datetimeIndex))
-    will_merge.extend(get_is_weekday_weekend(day_indexes))
+    will_merge.append(get_day_of_the_month_index(datetimeIndex))
+    will_merge.append(get_week_of_the_year_index(datetimeIndex))
+
+    will_merge.extend(get_is_weekday_weekend(day_of_the_week_index))
     will_merge.extend(get_distance_to_pay_days(datetimeIndex))
     
     for f in [get_is_ramazan, get_ramazan_in_7_days, get_is_kurban, get_kurban_in_7_days]:
         will_merge.append(f(datetimeIndex))
 
     result = pd.concat(will_merge, axis=1)
+    result = pd.concat([result, get_special_dates_index(result)], axis=1)
 
     return result
 
