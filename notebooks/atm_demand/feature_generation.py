@@ -205,12 +205,26 @@ def get_trend(series, period):
 # Special Days
 #------------------------------------------
 
-# inputs:
-#   - datetimeIndex: datetimeIndex of the original feature set
-#   - dates: dates to start the range from
-#   - n: size of range
-#   - name: name of the series
 def get_is_dates(datetimeIndex, dates, n, name):
+    """
+
+    Generates a boolean series where every date d in the dates
+    list and the next n days of date d is True.
+
+    Args:
+        datetimeIndex (:obj:`DatetimeIndex`): datetimeIndex to generate the new
+            boolean series from
+        dates (:obj:`list`): List of dates to use as starting points of ranges
+        n (int): Number of days to set True after date d from dates list
+        name (:obj:`str`): Name of the resulting series
+
+    Returns:
+        Boolean series
+
+    Example:
+        Suppose we want to set Ramazan Holiday and the next 4 days true:
+        >>> get_is_dates(datetimeIndex, ['2016-7-4', '2017-6-24'], 4, 'ramazan')
+    """
     is_date = pd.Series(False, index = datetimeIndex, name = "is_%s"%name)
     for arefe in dates:
         is_date[pd.date_range(start=arefe, periods=n)] = True
@@ -222,6 +236,25 @@ def get_is_dates(datetimeIndex, dates, n, name):
 #   - n: size of range
 #   - name: name of the series
 def get_dates_in_n_days(datetimeIndex, dates, n, name):
+    """
+
+    Generates a boolean series where n number of days before every date d
+    in the dates list is set to True.
+
+    Args:
+        datetimeIndex (:obj:`DatetimeIndex`): datetimeIndex to generate the new
+            boolean series from
+        dates (:obj:`list`): List of dates to use as ending points of ranges
+        n (int): Number of days to set True before date d from dates list
+        name (:obj:`str`): Name of the resulting series
+
+    Returns:
+        Boolean series
+
+    Example:
+        Suppose we want to set days before Ramazan Holiday true:
+        >>> get_dates_in_n_days(datetimeIndex, ['2016-7-4', '2017-6-24'],  7, 'kurban')
+    """
     in_n_days = pd.Series(False, index = datetimeIndex, name = "%s_in_%d_days"%(name, n))
     for arefe in dates:
         in_n_days[pd.date_range(end=arefe, periods=n)] = True
@@ -242,9 +275,20 @@ KURBAN_AREFES = [
     ]
 
 get_is_ramazan        = lambda datetimeIndex: get_is_dates(datetimeIndex, RAMAZAN_AREFES, 4, 'ramazan')
+get_is_kurban         = lambda datetimeIndex: get_is_dates(datetimeIndex, KURBAN_AREFES,  5, 'kurban')
 get_ramazan_in_7_days = lambda datetimeIndex: get_dates_in_n_days(datetimeIndex, RAMAZAN_AREFES, 7, 'ramazan')
-get_is_kurban         = lambda datetimeIndex: get_is_dates(datetimeIndex, KURBAN_AREFES, 5, 'kurban')
-get_kurban_in_7_days  = lambda datetimeIndex: get_dates_in_n_days(datetimeIndex, KURBAN_AREFES, 7, 'kurban')
+get_kurban_in_7_days  = lambda datetimeIndex: get_dates_in_n_days(datetimeIndex, KURBAN_AREFES,  7, 'kurban')
+
+def get_special_day_of_the_year(datetimeIndex, day, month, name):
+    is_date = pd.Series(False, index = datetimeIndex, name = "is_%s"%name)
+    is_date[(is_date.index.month==4) & (is_date.index.day==23)] = True
+    return is_date
+
+get_is_cocuk_bayrami      = lambda datetimeIndex: get_special_day_of_the_year(datetimeIndex, 23, 4,  'cocuk_bayrami')
+get_is_isci_bayrami       = lambda datetimeIndex: get_special_day_of_the_year(datetimeIndex, 1,  5,  'isci_bayrami')
+get_is_spor_bayrami       = lambda datetimeIndex: get_special_day_of_the_year(datetimeIndex, 19, 5,  'spor_bayrami')
+get_is_zafer_bayrami      = lambda datetimeIndex: get_special_day_of_the_year(datetimeIndex, 30, 8,  'zafer_bayrami')
+get_is_cumhuriyet_bayrami = lambda datetimeIndex: get_special_day_of_the_year(datetimeIndex, 29, 10, 'cumhuriyet_bayrami')
 
 def get_special_dates_index(df):
     special_dates = pd.Series(0, index = df.index, name='Special_Dates_Index')
@@ -269,7 +313,12 @@ def get_date_features(datetimeIndex):
     will_merge.extend(get_is_weekday_weekend(day_of_the_week_index))
     will_merge.extend(get_distance_to_pay_days(datetimeIndex))
     
-    for f in [get_is_ramazan, get_ramazan_in_7_days, get_is_kurban, get_kurban_in_7_days]:
+    for f in [get_is_ramazan, get_ramazan_in_7_days,
+              get_is_kurban, get_kurban_in_7_days, 
+              get_is_cocuk_bayrami, get_is_isci_bayrami,
+              get_is_spor_bayrami, get_is_zafer_bayrami,
+              get_is_cumhuriyet_bayrami              
+              ]:
         will_merge.append(f(datetimeIndex))
 
     result = pd.concat(will_merge, axis=1)

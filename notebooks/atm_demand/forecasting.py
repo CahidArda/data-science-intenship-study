@@ -1,7 +1,15 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
+
+def train_test_split(X, y, split=0.2):
+    """
+
+    Same function with train_test_split from sklearn.
+
+    """
+    cut = int(X.shape[0] * split)
+    return X[:-cut], X[-cut:], y[:-cut], y[-cut:]
 
 def mape_error(y_actual, y_pred, mean=True):
     """MAPE Error Method
@@ -117,7 +125,7 @@ def compare_model_parameter(algorithm, X, y, parameter, values, shuffle=True):
 
         
     """
-    X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=shuffle)
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
 
     train_error = []
     test_error = []
