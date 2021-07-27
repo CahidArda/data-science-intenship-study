@@ -1,3 +1,6 @@
+from tensorflow import keras
+from tensorflow.keras import layers
+
 class TransformerBlock(layers.Layer):
     def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
         super(TransformerBlock, self).__init__()
@@ -20,7 +23,7 @@ class TransformerBlock(layers.Layer):
         ffn_output = self.dropout2(ffn_output, training=training)
         return self.layernorm2(out1 + ffn_output)
 
-class TabTransformer(tf.keras.Model):
+class TabTransformer(keras.Model):
 
     def __init__(self, 
             categories,
