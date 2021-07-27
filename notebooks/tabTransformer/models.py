@@ -86,7 +86,7 @@ class TabTransformer(keras.Model):
         categorical_inputs = inputs[1:]
         
         # --> continuous
-        continuous_inputs = self.continuous_normalization(continuous_inputs)
+        #continuous_inputs = self.continuous_normalization(continuous_inputs)
 
         # --> categorical
         embedding_outputs = []
