@@ -126,7 +126,7 @@ def get_is_weekday_weekend(day_index_series):
 
     return is_weekday, is_weekend
 
-def get_average_of_last(series, sizes, prefix="average"):
+def get_window_stats(series, sizes, prefix):
     """
 
     Create average of last k days as a feature series
@@ -143,16 +143,20 @@ def get_average_of_last(series, sizes, prefix="average"):
     Examples:
         Suppose we want to create averages of last 7 days and last 30 days as
         two different feature series:
-        >>> get_average_of_last(df["CashIn"], [7,30], "CashIn_average")
+        >>> get_window_stats(df["CashIn"], [7,30], "CashIn_average")
     """
     sizes.sort()
     windows = get_windows(series, sizes[-1], drop_t = True)
 
     results = []
     for size in sizes:
-        averages = windows[windows.columns[:size]].mean(axis=1)
-        averages.name = prefix + '_' + str(size)
+        averages      = windows[windows.columns[:size]].mean(axis=1)
+        averages.name = prefix + '_average_' + str(size)
         results.append(averages)
+
+        stds      = windows[windows.columns[:size]].std(axis=1)
+        stds.name = prefix + '_std_' + str(size)
+        results.append(stds)
     
     return results
 
@@ -305,7 +309,7 @@ def get_date_features(datetimeIndex):
 
     day_of_the_week_index = get_day_of_the_week_index(datetimeIndex)
     will_merge.append(day_of_the_week_index)
-    will_merge.append(pd.get_dummies(day_of_the_week_index, prefix="Day_Index_"))
+    will_merge.append(pd.get_dummies(day_of_the_week_index, prefix="Day_Index"))
     
     will_merge.append(get_day_of_the_month_index(datetimeIndex))
     will_merge.append(get_week_of_the_year_index(datetimeIndex))
@@ -333,15 +337,15 @@ def get_feature_sets(df, targets):
     will_merge = [df]
 
     # CashIn/CashOut averages of the last week/month
-    sizes = [7, 30]
+    sizes = [7, 14, 30]
     for target in targets:
-        will_merge.extend(get_average_of_last(df[target], sizes, target + "_average"))
+        will_merge.extend(get_window_stats(df[target], sizes, target))
 
     for target in targets:
         will_merge.append(get_trend(df[target], 7))
 
     # Last 14 days of CashIn and CashOut
-    # These windows are actually created twice at the moment. One here and one inside get_average_of_last function
+    # These windows are actually created twice at the moment. One here and one inside get_window_stats function
     # We can update to calculate windows only once later.
     will_merge.append(get_windows(df['CashIn'], 14, 'CashIn', drop_t=True))
     will_merge.append(get_windows(df['CashOut'], 40, 'CashOut', drop_t=True))
