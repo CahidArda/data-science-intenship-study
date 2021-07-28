@@ -104,9 +104,10 @@ def format_dates(datetimeIndex, new_format, name):
     new_index.name = name
     return new_index
 
-get_day_of_the_week_index  = lambda datetimeIndex: format_dates(datetimeIndex, '%u', 'Day_of_the_Week_Index') - 1
-get_day_of_the_month_index = lambda datetimeIndex: format_dates(datetimeIndex, '%d', 'Day_of_the_Month_Index') - 1
-get_week_of_the_year_index = lambda datetimeIndex: format_dates(datetimeIndex, '%W', 'Week_of_the_Year_Index')
+get_day_of_the_week_index   = lambda datetimeIndex: format_dates(datetimeIndex, '%u', 'Day_of_the_Week_Index') - 1
+get_day_of_the_month_index  = lambda datetimeIndex: format_dates(datetimeIndex, '%d', 'Day_of_the_Month_Index') - 1
+get_week_of_the_year_index  = lambda datetimeIndex: format_dates(datetimeIndex, '%W', 'Week_of_the_Year_Index')
+get_month_of_the_year_index = lambda datetimeIndex: format_dates(datetimeIndex, '%m', 'Month_of_the_Year_Index') - 1
 
 def get_is_weekday_weekend(day_index_series):
     """Get weekday/weekend Feature Series
@@ -301,6 +302,56 @@ def get_special_dates_index(df):
     return special_dates
 
 # ------------------------------------------
+# Clustering
+# ------------------------------------------
+
+def get_day_of_the_week_clustering_df(all_atms_feature_set, clustering_feature):
+    """
+    Method for generating a df for clustering, based on the Day_of_the_Week_Index
+    feature.
+
+    Args:
+        all_atms_feature_set (:obj:`DataFrame`): Dataframe with feature sets
+            of all atms to use in training/testing
+        clustering_feature (:obj:`str`): feature to create clustering df with
+
+    Returns:
+        Dataframe with shape (n_unique_atms, 7) to be used in clustering
+    """
+    clustering_df = pd.DataFrame(dtype='float64')
+
+    for atm_id in all_atms_feature_set['AtmId'].unique():
+        atm_df = all_atms_feature_set[all_atms_feature_set['AtmId'] == atm_id]
+        
+        day_of_the_week_index = atm_df['Day_of_the_Week_Index']
+
+        for i in range(7):
+            clustering_df.loc[atm_id, i] = atm_df.loc[day_of_the_week_index[day_of_the_week_index == i].index].mean()[clustering_feature]
+
+    clustering_df = clustering_df.divide(clustering_df.sum(axis=1), axis = 0)
+    return clustering_df
+
+def get_cluster(clustering_df, clustering_alg, n_clusters, random_state = 42):
+    """
+    Applies given clustering algorithm to the clustering_df. Generates a dictionary
+    with labels of clustering algorithm.
+
+    Args:
+        clustering_df (:obj:`DataFrame`): Dataframe used for clustering
+        clustering_alg (:obj:`sklearn.cluster`): clustering algorithm
+        n_clusters (int): number of clusters
+        random_state (int, optional): random state to use in clustering. Default
+            value is 42.
+
+    Returns:
+        Dictionary with clustering_df index as keys and clustering labels as values
+
+    """
+    fitted_alg = clustering_alg(n_clusters=n_clusters, random_state=random_state).fit(clustering_df)
+
+    return {i:label for i, label in zip(clustering_df.index, fitted_alg.labels_)}
+
+# ------------------------------------------
 # Generate feature function
 # ------------------------------------------
 
@@ -313,6 +364,7 @@ def get_date_features(datetimeIndex):
     
     will_merge.append(get_day_of_the_month_index(datetimeIndex))
     will_merge.append(get_week_of_the_year_index(datetimeIndex))
+    will_merge.append(get_month_of_the_year_index(datetimeIndex))
 
     will_merge.extend(get_is_weekday_weekend(day_of_the_week_index))
     will_merge.extend(get_distance_to_pay_days(datetimeIndex))
@@ -356,3 +408,24 @@ def get_feature_sets(df, targets):
     result.dropna(inplace=True)
     
     return result
+
+def get_all_atms_feature_set(df, atm_ids=None, first_n=None):
+    assert atm_ids != None or (atm_ids == None and first_n != None), "You must provide atm_ids or first_n parameter"
+    
+    if atm_ids == None:
+        atm_ids = df['AtmId'].value_counts()[:first_n].index
+
+    feature_sets = []
+
+    for atm_id in atm_ids:
+        atm_df = get_atm(df, atm_id)
+        atm_df = atm_df[:-135]
+        atm_df = clean_data(atm_df, drop_zeros=True)
+            
+        day_of_the_week_index = get_day_of_the_week_index(atm_df.index)
+
+        atm_df['AtmId'] = atm_id
+        feature_set = get_feature_sets(atm_df, ['CashIn', 'CashOut'])
+        feature_sets.append(feature_set)
+
+    return pd.concat(feature_sets, axis=0)
