@@ -34,7 +34,8 @@ class TabTransformer(keras.Model):
             heads,
             attn_dropout,
             ff_dropout,
-            mlp_hidden):
+            mlp_hidden,
+            normalize_continuous = True):
         """TabTrasformer model constructor
 
         Args:
@@ -49,11 +50,15 @@ class TabTransformer(keras.Model):
             ff_dropout (float): dropout to use in feed-forward layer of transformers
             mlp_hidden (:obj:`list`): list of tuples, indicating the size of the mlp layers and
                 their activation functions
+            normalize_continuous (boolean, optional): whether the continuous features are normalized
+                before MLP layers, True by default
         """
         super(TabTransformer, self).__init__()
 
         # --> continuous inputs
-        self.continuous_normalization = layers.LayerNormalization()
+        self.normalize_continuous = normalize_continuous
+        if normalize_continuous:
+            self.continuous_normalization = layers.LayerNormalization()
 
         # --> categorical inputs
 
@@ -86,7 +91,8 @@ class TabTransformer(keras.Model):
         categorical_inputs = inputs[1:]
         
         # --> continuous
-        #continuous_inputs = self.continuous_normalization(continuous_inputs)
+        if self.normalize_continuous:
+            continuous_inputs = self.continuous_normalization(continuous_inputs)
 
         # --> categorical
         embedding_outputs = []
