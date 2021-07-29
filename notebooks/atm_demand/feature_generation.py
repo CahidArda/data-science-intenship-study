@@ -350,6 +350,28 @@ def get_clustering(clustering_df, clustering_alg, n_clusters, random_state = 42)
 
     return {i:label for i, label in zip(clustering_df.index, fitted_alg.labels_)}
 
+def add_cluster_features(all_atms_feature_set, feature_cluster_pairs, target, clustering_alg):
+    """
+    Adds features by applying clustering to given features
+
+    Args:
+        all_atms_feature_set (:obj:`DataFrame`): Dataframe with feature sets
+            of all atms to use in training/testing
+        feature_cluster_pairs (:obj:`list`): List of two item tuples. First item is
+            feature name and second item is the number of clusters for that feature.
+        target (:obj:`str`): Feature to use as target when clustering.
+        clustering_alg (:obj:`sklearn.cluster`): clustering algorithm
+    """
+    all_atms_feature_set = all_atms_feature_set.copy()
+
+    for feature, n_clusters in feature_cluster_pairs:
+        clustering_df = get_clustering_df(all_atms_feature_set, feature, target)
+        d = get_clustering(clustering_df, clustering_alg, n_clusters)
+
+        all_atms_feature_set[feature + '_ClusterId'] = all_atms_feature_set['AtmId'].map(d)
+    
+    return all_atms_feature_set
+
 # ------------------------------------------
 # Generate feature function
 # ------------------------------------------
