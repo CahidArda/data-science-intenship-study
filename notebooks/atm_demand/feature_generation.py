@@ -295,9 +295,9 @@ get_is_spor_bayrami       = lambda datetimeIndex: get_special_day_of_the_year(da
 get_is_zafer_bayrami      = lambda datetimeIndex: get_special_day_of_the_year(datetimeIndex, 30, 8,  'zafer_bayrami')
 get_is_cumhuriyet_bayrami = lambda datetimeIndex: get_special_day_of_the_year(datetimeIndex, 29, 10, 'cumhuriyet_bayrami')
 
-def get_special_dates_index(df):
-    special_dates = pd.Series(0, index = df.index, name='Special_Dates_Index')
-    for i, feature in enumerate(['is_ramazan', 'ramazan_in_7_days', 'is_kurban','kurban_in_7_days']):
+def get_special_dates_index(df, features, name):
+    special_dates = pd.Series(0, index = df.index, name=name)
+    for i, feature in enumerate(features):
         special_dates[df[feature] == 1] = i + 1
     return special_dates
 
@@ -399,7 +399,7 @@ def get_date_features(datetimeIndex):
         will_merge.append(f(datetimeIndex))
 
     result = pd.concat(will_merge, axis=1)
-    result = pd.concat([result, get_special_dates_index(result)], axis=1)
+    result = pd.concat([result, get_special_dates_index(result, ['is_ramazan', 'ramazan_in_7_days', 'is_kurban','kurban_in_7_days'], 'Special_Lunar_Dates_Index')], axis=1)
 
     return result
 
@@ -421,7 +421,7 @@ def get_feature_sets(df, targets):
     # These windows are actually created twice at the moment. One here and one inside get_window_stats function
     # We can update to calculate windows only once later.
     will_merge.append(get_windows(df['CashIn'], 14, 'CashIn', drop_t=True))
-    will_merge.append(get_windows(df['CashOut'], 40, 'CashOut', drop_t=True))
+    will_merge.append(get_windows(df['CashOut'], 28, 'CashOut', drop_t=True))
 
     will_merge.append(get_date_features(df.index).astype('int8'))
 
