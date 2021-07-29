@@ -305,7 +305,7 @@ def get_special_dates_index(df):
 # Clustering
 # ------------------------------------------
 
-def get_day_of_the_week_clustering_df(all_atms_feature_set, clustering_feature):
+def get_clustering_df(all_atms_feature_set, clustering_feature, target):
     """
     Method for generating a df for clustering, based on the Day_of_the_Week_Index
     feature.
@@ -313,25 +313,24 @@ def get_day_of_the_week_clustering_df(all_atms_feature_set, clustering_feature):
     Args:
         all_atms_feature_set (:obj:`DataFrame`): Dataframe with feature sets
             of all atms to use in training/testing
-        clustering_feature (:obj:`str`): feature to create clustering df with
+        clustering_feature (:obj:`str`): categorical feature to create clustering
+            df with. Column names of the clustering df will be unique values of
+            this feature
+        target (:obj:`str`): Target feature
 
     Returns:
         Dataframe with shape (n_unique_atms, 7) to be used in clustering
     """
-    clustering_df = pd.DataFrame(dtype='float64')
+    clustering_df = pd.DataFrame(columns=all_atms_feature_set[clustering_feature].unique(), dtype='float64')
 
     for atm_id in all_atms_feature_set['AtmId'].unique():
         atm_df = all_atms_feature_set[all_atms_feature_set['AtmId'] == atm_id]
-        
-        day_of_the_week_index = atm_df['Day_of_the_Week_Index']
-
-        for i in range(7):
-            clustering_df.loc[atm_id, i] = atm_df.loc[day_of_the_week_index[day_of_the_week_index == i].index].mean()[clustering_feature]
+        clustering_df.loc[atm_id] = atm_df.groupby(clustering_feature).mean()[target]
 
     clustering_df = clustering_df.divide(clustering_df.sum(axis=1), axis = 0)
     return clustering_df
 
-def get_cluster(clustering_df, clustering_alg, n_clusters, random_state = 42):
+def get_clustering(clustering_df, clustering_alg, n_clusters, random_state = 42):
     """
     Applies given clustering algorithm to the clustering_df. Generates a dictionary
     with labels of clustering algorithm.
