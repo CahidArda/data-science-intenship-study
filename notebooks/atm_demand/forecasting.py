@@ -11,7 +11,7 @@ def train_test_split(X, y, split=0.2):
     cut = int(X.shape[0] * split)
     return X[:-cut], X[-cut:], y[:-cut], y[-cut:]
 
-def mape_error(y_actual, y_pred, mean=True):
+def mape_error(y_actual, y_pred, mean=True, use_index=True):
     """MAPE Error Method
 
     Calculates MAPE Error
@@ -27,12 +27,19 @@ def mape_error(y_actual, y_pred, mean=True):
         the "mean" parameter
 
     """
-    result = 100 * pd.Series(((y_actual - y_pred) / y_actual), index=y_actual.index)
+    result = 100 * pd.Series(((y_actual - y_pred) / y_actual))
+    
+    if use_index:
+        result.index = y_actual.index
+
     result = result.abs()
     if mean:
         return result.mean()
     else:
         return result
+
+def nmae_error(y_actual, y_pred):
+    return (y_pred - y_actual).abs().sum() / y_actual.sum()
 
 from feature_generation import get_windows
 
